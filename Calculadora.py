@@ -28,11 +28,31 @@ class Calculadora(ctk.CTk):
             ['C', '0', '=', '+']
         ]
 
-        # renderiza a grade
+        # renderiza a grade e adiciona funcionalidade
         for linha_idx, linha in enumerate(botoes):
             for col_idx, texto in enumerate(linha):
-                btn = ctk.CTkButton(self, text=texto, width=65, height=50, font=("Arial", 20))
+                # expressao lambda para capturar o valor de cada botao
+                comando = lambda x=texto: self.clique(x)
+                btn = ctk.CTkButton(self, text=texto, width=65, height=50, font=("Arial", 20), command=comando)
                 btn.grid(row=linha_idx+1, column=col_idx, padx=5, pady=5)
+
+    def clique(self, valor):
+        # limpa o visor
+        if valor == 'C':
+            self.display.delete(0, 'end')
+        # calcula o resultado
+        elif valor == '=':
+            try:
+                expressao = self.display.get()
+                resultado = str(eval(expressao))
+                self.display.delete(0, 'end')
+                self.display.insert(0, resultado)
+            except Exception: # trata divisao por zero ou erro de sintaxe
+                self.display.delete(0, 'end')
+                self.display.insert(0, 'Erro')
+        # adiciona o numero/operador no visor
+        else:
+            self.display.insert('end', valor)
 
 if __name__ == "__main__":
     app = Calculadora()
