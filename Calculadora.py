@@ -9,7 +9,7 @@ class Calculadora(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # setup da janela (altura aumentada para caber 6 linhas)
+        # setup da janela
         self.title("Calculadora")
         self.geometry("320x460")
         self.resizable(False, False)
@@ -19,6 +19,10 @@ class Calculadora(ctk.CTk):
         self.display.grid(row=0, column=0, columnspan=4, padx=10, pady=15)
 
         self.criar_botoes()
+
+        # ativa a captura do teclado fisico
+        self.bind("<Key>", self.tratar_teclado)
+        self.focus_set() # Mantem o foco na janela principal
 
     def criar_botoes(self):
         # mapa dos botoes no padrao Windows
@@ -96,6 +100,22 @@ class Calculadora(ctk.CTk):
         except Exception: # trata divisoes por zero ou formatacoes invalidas
             self.display.delete(0, 'end')
             self.display.insert(0, 'Erro')
+
+    # Nova funcao para traduzir o teclado para cliques virtuais
+    def tratar_teclado(self, event):
+        tecla = event.char
+        tecla_especial = event.keysym
+
+        # Mapeia teclas especiais para as strings que a funcao clique() ja entende
+        if tecla_especial == "Return":
+            self.clique('=')
+        elif tecla_especial == "BackSpace":
+            self.clique('⌫')
+        elif tecla_especial == "Escape":
+            self.clique('C')
+        # Se for um numero ou operador matematico padrao
+        elif tecla in '0123456789.+-*/':
+            self.clique(tecla)
 
 if __name__ == "__main__":
     app = Calculadora()
