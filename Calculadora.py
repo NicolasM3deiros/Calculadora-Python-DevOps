@@ -13,6 +13,10 @@ class Calculadora(ctk.CTk):
         self.geometry("300x400")
         self.resizable(False, False)
 
+        # display de resultados
+        self.display = ctk.CTkEntry(self, width=280, height=50, font=("Arial", 30), justify="right")
+        self.display.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
+
 if __name__ == "__main__":
     app = Calculadora()
     app.mainloop()
