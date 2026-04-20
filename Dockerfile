@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y python3-tk xvfb
 # Instala o CustomTkinter, PyInstaller, etc.
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia todo o código do seu computador para dentro do container
+# Copia o código para dentro do container
 COPY . .
 
 # Comando mágico: Roda o Python dentro do monitor virtual (-a acha uma tela livre automaticamente)
