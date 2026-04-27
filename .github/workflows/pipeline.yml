@@ -1,65 +1,35 @@
 name: CI/CD Pipeline Python
 
-# Executa quando houver Pull Request ou Push para a main
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  # ----------------------------------------------------
-  # FASE DE CI: Integração Contínua (Qualidade do Código)
-  # ----------------------------------------------------
-  Continuous-Integration:
+  build-and-test:
     runs-on: ubuntu-latest
+    
     steps:
-    - name: Baixar o código
+    - name: Checkout do código
       uses: actions/checkout@v4
-
+      
     - name: Configurar Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
-
-    - name: Instalar dependências
+        python-version: "3.10"
+        
+    - name: Instalar dependências e Monitor Virtual (xvfb)
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Checagem de Qualidade (Linting com Flake8)
+        sudo apt-get update
+        sudo apt-get install -y python3-tk xvfb
+        pip install customtkinter
+        
+    - name: Rodar Testes Unitários
       run: |
-        # Para a execução se houver erros graves de sintaxe
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Gera avisos para o resto, mas não reprova a PR
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        xvfb-run -a python -m unittest test_calculadora.py
 
-  # ----------------------------------------------------
-  # FASE DE CD: Entrega Contínua (Gerar o .exe do Windows)
-  # ----------------------------------------------------
-  Continuous-Delivery:
-    needs: Continuous-Integration # Só roda se o CI passar
-    runs-on: windows-latest       # Roda num Windows para gerar o .exe
-    steps:
-    - name: Baixar o código
-      uses: actions/checkout@v4
-
-    - name: Configurar Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-
-    - name: Instalar dependências
+    - name: Enviar Alerta para o Discord
+      if: always()
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Construir o Executável (PyInstaller)
-      run: |
-        pyinstaller --noconfirm --onefile --windowed calculadora.py
-
-    - name: Disponibilizar o .exe para Download
-      uses: actions/upload-artifact@v4
-      with:
-        name: Calculadora-Executavel
-        path: dist/calculadora.exe
+        curl -H "Content-Type: application/json" \
+        -d "{\"content\": \"🤖 Alerta do GitHub Actions! O Pipeline da Calculadora acabou de rodar. Status final da rotina: ${{ job.status }}\"}" \
+        ${{ secrets.DISCORD_WEBHOOK }}
