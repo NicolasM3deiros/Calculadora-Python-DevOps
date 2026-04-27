@@ -1,8 +1,10 @@
 name: CI/CD Pipeline Python
 
 on:
+  push:
+    branches: [ "**" ] # Escuta commits enviados para QUALQUER branch
   pull_request:
-    branches: [ "main" ]
+    types: [opened, closed] # Escuta quando um PR é aberto ou quando é fechado
 
 jobs:
   build-and-test:
@@ -27,9 +29,27 @@ jobs:
       run: |
         xvfb-run -a python -m unittest test_calculadora.py
 
+    - name: Criar Mensagem Dinâmica do Discord
+      if: always() # Roda mesmo se o teste falhar
+      run: |
+        if [ "${{ github.event_name }}" == "push" ]; then
+          MSG="🚀 **Novo Commit!** O dev ${{ github.actor }} mandou código para a branch \`${{ github.ref_name }}\`. Status dos testes: ${{ job.status }}"
+        elif [ "${{ github.event_name }}" == "pull_request" ] && [ "${{ github.event.action }}" == "opened" ]; then
+          MSG="👀 **Novo Pull Request!** ${{ github.actor }} abriu um pedido para juntar código. Título: *${{ github.event.pull_request.title }}*"
+        elif [ "${{ github.event_name }}" == "pull_request" ] && [ "${{ github.event.pull_request.merged }}" == "true" ]; then
+          MSG="✅ **Deu Boa! (Merge)** O Pull Request foi aprovado e o código já está na branch \`main\`! 🎉"
+        else
+          MSG="⚙️ Pipeline finalizado. Status: ${{ job.status }}"
+        fi
+        
+        # Salva a mensagem como uma variável de ambiente para o próximo passo usar
+        echo "MENSAGEM<<EOF" >> $GITHUB_ENV
+        echo "$MSG" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
     - name: Enviar Alerta para o Discord
       if: always()
       run: |
         curl -H "Content-Type: application/json" \
-        -d "{\"content\": \"🤖 Alerta do GitHub Actions! O Pipeline da Calculadora acabou de rodar. Status final da rotina: ${{ job.status }}\"}" \
+        -d "{\"content\": \"${{ env.MENSAGEM }}\"}" \
         ${{ secrets.DISCORD_WEBHOOK }}
